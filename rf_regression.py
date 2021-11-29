@@ -38,10 +38,40 @@ def cleanup_data(path):
     return df
 
 
+def get_categories_and_colors():
+    """
+    colors and categorize to combine feature importance chart
+    """
+    
+    green = "yellowgreen"
+    brown = "saddlebrown"
+    blue = "dodgerblue"
+    yellow = "khaki"
+    
+    plant = ['canopy_height', "agb",'ndvi']
+    soil = ['sand',  'clay', 'silt','thetas', 'ks']
+    climate = [ 'dry_season_length', 'vpd_mean', 'vpd_std']
+    topo = ['elevation', 'aspect', 'slope', 'twi',"dist_to_water"]
+    
+    return green, brown, blue, yellow, plant, soil, climate, topo
 
 
+def regress(df):
+    """
+    Regress features on PWS using rf model
+    Parameters
+    ----------
+    df : columns should have pws and features
 
-def regress(df)
+    Returns:
+        X_test:dataframe of test set features
+        y_test: Series of test set pws
+        regr: trained rf model (sklearn)
+        imp: dataframe of feature importance in descending order
+    -------
+    
+
+    """
     X = df.drop("pws",axis = 1)
     y = df['pws']
     
@@ -90,18 +120,13 @@ def regress(df)
              # 'vpd_mean', 'vpd_std'], axis = 1, inplace = True)
     # print(df.shape)
     
-    green = "yellowgreen"
-    brown = "saddlebrown"
-    blue = "dodgerblue"
-    yellow = "khaki"
+    green, brown, blue, yellow, plant, soil, climate, topo = get_categories_and_colors()
     
     imp = pd.DataFrame(index = ticks, columns = ["importance"], data = heights)
-    plant = ['canopy_height', "agb",'ndvi']
-    soil = ['sand',  'clay', 'silt','thetas', 'ks']
-    climate = [ 'dry_season_length', 'vpd_mean', 'vpd_std']
-    topo = ['elevation', 'aspect', 'slope', 'twi',"dist_to_water"]
     
-    def colorize(x):
+    
+    
+    def _colorize(x):
         if x in plant:
             return green
         elif x in soil:
@@ -110,8 +135,9 @@ def regress(df)
             return blue
         else:
             return yellow
+        
     imp["color"] = imp.index
-    imp.color = imp.color.apply(colorize)
+    imp.color = imp.color.apply(_colorize)
     imp["symbol"] = imp.index
     # imp.loc["hft","symbol"] = "Hydraulic\nfunctional type"
     # imp.loc["pft","symbol"] = "PFT"
@@ -130,10 +156,43 @@ def regress(df)
     imp.sort_values("importance", ascending = True, inplace = True)
     print(imp.groupby("color").sum().round(2))
 
-return regr, imp
+    return X_test, y_test, regr, score, imp
 
-def plot_importance()
+    
+
+def plot_preds_actual(X_test, y_test, regr, score):
+    """
+    Plot of predictions vs actual data
+    """
+    y_hat =regr.predict(X_test)
+    
+    fig, ax = plt.subplots(figsize = (3,3))
+    ax.scatter(y_hat, y_test, s = 1, alpha = 0.05, color = "k")
+    ax.set_xlabel("Predicted PWS")
+    ax.set_ylabel("Actual PWS")
+    ax.set_xlim(0,2)
+    ax.set_ylim(0,2)
+    ax.annotate(f"R$^2$={score:0.2f}", (0.1,0.9),xycoords = "axes fraction", ha = "left")
+    return ax
+
+
+def plot_importance(imp):
+    """
+    plot feature importance for all features
+
+    Parameters
+    ----------
+    imp : dataframe returned by regress
+
+    Returns
+    -------
+    ax: axis handle
+
+    """
+    
     fig, ax = plt.subplots(figsize = (3.5,6))
+    green, brown, blue, yellow, plant, soil, climate, topo = get_categories_and_colors()
+
     imp.plot.barh(y = "importance",x="symbol",color = imp.color, edgecolor = "grey", ax = ax)
 
     legend_elements = [matplotlib.patches.Patch(facecolor=green, edgecolor='grey',
@@ -152,22 +211,13 @@ def plot_importance()
     ax.spines['top'].set_visible(False)
     
     plt.tight_layout()
-    
+    return ax
 
-def plot_preds_actual(X_test, y_test)
-
-    y_hat =regr.predict(X_test)
-    
-    fig, ax = plt.subplots(figsize = (3,3))
-    ax.scatter(y_hat, y_test, s = 1, alpha = 0.05, color = "k")
-    ax.set_xlabel("Predicted PWS")
-    ax.set_ylabel("Actual PWS")
-    ax.set_xlim(0,2)
-    ax.set_ylim(0,2)
-    ax.annotate(f"R$^2$={score:0.2f}", (0.1,0.9),xycoords = "axes fraction", ha = "left")
-
-def plot_importance_by_category()
-
+def plot_importance_by_category(imp):
+    """
+    Feature importance combined by categories
+    """
+    green, brown, blue, yellow, plant, soil, climate, topo = get_categories_and_colors()
     combined = pd.DataFrame({"category":["plant","climate","soil","topography"], "color":[green, blue, brown, yellow]})
     combined = combined.merge(imp.groupby("color").sum(), on = "color")
     
@@ -187,21 +237,37 @@ def plot_importance_by_category()
     
     plt.tight_layout()
 
+# def plot_pdp(regr, X_test):
+#     """
+#     Partial dependance plot
+#     Parameters
+#     ----------
+#     regr : trained rf regression
+#     X_test : test set data for creating plot
 
-## PDPs
+#     Returns
+#     -------
+#     ax: axis handle
 
-def plot_pdp()
-    features = [3,10,6,4,12,11,15]
-    sklearn.inspection.PartialDependenceDisplay.from_estimator(regr, X_test, features)
+#     """
+    
+#     features = [3,10,6,4,12,11,15]
+#     sklearn.inspection.PartialDependenceDisplay.from_estimator(regr, X_test, features)
+    
 
 def main():
     #%% Load data
     path = os.path.join(dirs.dir_data, 'store_plant_soil_topo_climate.h5')
     df = cleanup_data(path)
+    #%% train rf
+    X_test, y_test, regr, score,  imp = regress(df)
+    #%% make plots
+    ax = plot_importance(imp)
+    ax = plot_importance_by_category(imp)
+    ax = plot_preds_actual(X_test, y_test, regr, score)
+    # plot_pdp(regr, X_test)
     
-    
-    
-    
+
 if __name__ == "__main__":
     main()
 
