@@ -47,9 +47,9 @@ def get_categories_and_colors():
     blue = "dodgerblue"
     yellow = "khaki"
     
-    plant = ['canopy_height', "agb",'ndvi']
+    plant = ['canopy_height', "agb",'ndvi', "lc"]
     soil = ['sand',  'clay', 'silt','thetas', 'ks']
-    climate = [ 'dry_season_length', 'vpd_mean', 'vpd_std']
+    climate = [ 'dry_season_length', 'vpd_mean', 'vpd_std',"ppt"]
     topo = ['elevation', 'aspect', 'slope', 'twi',"dist_to_water"]
     
     return green, brown, blue, yellow, plant, soil, climate, topo
@@ -60,7 +60,9 @@ def prettify_names(names):
                  "vpd_mean":"VPD$_{mean}$",
                  "thetas":"Soil porosity",
                  "elevation":"Elevation",
-                 "dry_season_length":"Dry season length"
+                 "dry_season_length":"Dry season length",
+                 "ppt":"Precipitation",
+                 "agb":"Above-ground biomass"
                  }
     return [new_names[key] for key in names]
     
@@ -227,7 +229,7 @@ def plot_pdp(regr, X_test):
     X_test : test set data for creating plot
     """
     
-    features = [3,10,6,4,12,11]
+    features = [3,10,6,16, 4,12,11, 15]
     feature_names = list(X_test.columns[features])
     feature_names = prettify_names(feature_names)
     for feature, feature_name in zip(features, feature_names):

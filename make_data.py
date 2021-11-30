@@ -113,7 +113,7 @@ def create_h5():
     keys = ['pws','silt','sand','clay', 'ks','thetas','isohydricity',\
         'root_depth','canopy_height','hft','p50','gpmax', 'c','g1','pft',
         "elevation","aspect","slope","twi","dry_season_length","ndvi",\
-            "vpd_mean","vpd_std", "dist_to_water","agb"]
+            "vpd_mean","vpd_std", "dist_to_water","agb","ppt","lc"]
     
     array = np.zeros((len(keys), data['pws'].shape[0],data['pws'].shape[1])).astype('float')
     array[0] = data['pws']
@@ -156,6 +156,11 @@ def create_h5():
     array[23]= ds.GetRasterBand(band).ReadAsArray()
     ds = gdal.Open("D:/Krishna/projects/pws_drivers/data/agb_2020.tif")
     array[24]= ds.GetRasterBand(band).ReadAsArray()
+    ds = gdal.Open("D:/Krishna/projects/wildfire_from_lfmc/data/mean/ppt_mean.tif")
+    array[25]= ds.GetRasterBand(band).ReadAsArray()
+    ds = gdal.Open("D:/Krishna/projects/wildfire_from_lfmc/data/mean/landcover.tif")
+    array[26]= ds.GetRasterBand(band).ReadAsArray()
+    
     ds = None
     
     df = create_df(array,keys)
@@ -243,7 +248,7 @@ def main():
     df.columns = df.columns.astype(str)    
     
     #%% Plot heatmap
-    plot_heatmap(df)
+    # plot_heatmap(df)
         
 if __name__ == "__main__":
     main()
