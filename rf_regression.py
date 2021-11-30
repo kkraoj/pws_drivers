@@ -21,7 +21,6 @@ import sklearn.metrics
 import dirs
 
 sns.set(font_scale = 1., style = "ticks")
-plt.style.use("pnas")
 
 def cleanup_data(path):
     """
@@ -55,7 +54,20 @@ def get_categories_and_colors():
     
     return green, brown, blue, yellow, plant, soil, climate, topo
 
-
+def prettify_names(names):
+    new_names = {"ks":"K$_s$",
+                 "ndvi":"NDVI",
+                 "vpd_mean":"VPD$_{mean}$",
+                 "thetas":"Soil porosity",
+                 "elevation":"Elevation",
+                 "dry_season_length":"Dry season length"
+                 }
+    return [new_names[key] for key in names]
+    
+    
+    
+    
+    
 def regress(df):
     """
     Regress features on PWS using rf model
@@ -237,24 +249,28 @@ def plot_importance_by_category(imp):
     
     plt.tight_layout()
 
-# def plot_pdp(regr, X_test):
-#     """
-#     Partial dependance plot
-#     Parameters
-#     ----------
-#     regr : trained rf regression
-#     X_test : test set data for creating plot
-
-#     Returns
-#     -------
-#     ax: axis handle
-
-#     """
+def plot_pdp(regr, X_test):
+    """
+    Partial dependance plot
+    requires scikit-learn>=0.24.2
+    Parameters
+    ----------
+    regr : trained rf regression
+    X_test : test set data for creating plot
+    """
     
-#     features = [3,10,6,4,12,11,15]
-#     sklearn.inspection.PartialDependenceDisplay.from_estimator(regr, X_test, features)
-    
+    features = [3,10,6,4,12,11]
+    feature_names = list(X_test.columns[features])
+    feature_names = prettify_names(feature_names)
+    for feature, feature_name in zip(features, feature_names):
+        pd_results = sklearn.inspection.partial_dependence(regr, X_test, feature)
+        fig, ax = plt.subplots(figsize = (4,4))
+        ax.plot(pd_results[1][0], pd_results[0][0])
+        ax.set_xlabel(feature_name)
+        ax.set_ylabel("Plant-water sensitivity")
+        plt.show()
 
+    
 def main():
     #%% Load data
     path = os.path.join(dirs.dir_data, 'store_plant_soil_topo_climate.h5')
@@ -265,7 +281,7 @@ def main():
     ax = plot_importance(imp)
     ax = plot_importance_by_category(imp)
     ax = plot_preds_actual(X_test, y_test, regr, score)
-    # plot_pdp(regr, X_test)
+    plot_pdp(regr, X_test)
     
 
 if __name__ == "__main__":
