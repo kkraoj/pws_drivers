@@ -49,7 +49,7 @@ def get_categories_and_colors():
     
     plant = ['canopy_height', "agb",'ndvi', "lc"]
     soil = ['sand',  'clay', 'silt','thetas', 'ks']
-    climate = [ 'dry_season_length', 'vpd_mean', 'vpd_std',"ppt"]
+    climate = [ 'dry_season_length', 'vpd_mean', 'vpd_std',"ppt_mean","ppt_std"]
     topo = ['elevation', 'aspect', 'slope', 'twi',"dist_to_water"]
     
     return green, brown, blue, yellow, plant, soil, climate, topo
@@ -61,7 +61,8 @@ def prettify_names(names):
                  "thetas":"Soil porosity",
                  "elevation":"Elevation",
                  "dry_season_length":"Dry season length",
-                 "ppt":"Precipitation",
+                 "ppt_mean":"Precipitation$_{mean}$",
+                 "ppt_std":"Precipitation$_{sd}$",
                  "agb":"Above-ground biomass"
                  }
     return [new_names[key] for key in names]
@@ -228,8 +229,10 @@ def plot_pdp(regr, X_test):
     regr : trained rf regression
     X_test : test set data for creating plot
     """
-    
-    features = [3,10,6,16, 4,12,11, 15]
+    # Which features need PDPs? print below line and choose the numbers
+    # corresponding to the feature
+    # print(list(zip(X_test.columns, range(X_test.shape[1]))))
+    features = [3,10,6,17, 16, 11, 13,12]
     feature_names = list(X_test.columns[features])
     feature_names = prettify_names(feature_names)
     for feature, feature_name in zip(features, feature_names):
