@@ -84,59 +84,35 @@ def regress(df):
     
 
     """
+    # separate data into features and labels
     X = df.drop("pws",axis = 1)
     y = df['pws']
-    
+    # separate into train and test set
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
         X, y, test_size=0.33, random_state=32)
-    
+    # Checking if leaves or node_impurity affects performance
+    # after running found that it has almost no effect (R2 varies by 0.01)
     # for leaves in [6,7,8,9,10,12, 14, 15]:
         # for decrease in [1e-5, 5e-6,1e-6, 1e-7]:
+    # choose min leaves in terminal node and node impurity
     leaves = 6
     decrease = 1e-6
+    # construct rf model
     regr = sklearn.ensemble.RandomForestRegressor(min_samples_leaf=leaves, \
                       min_impurity_decrease=decrease, n_estimators = 50)
+    # train
     regr.fit(X_train, y_train)
+    # test set performance
     score = regr.score(X_test,y_test)
     print(f"[INFO] score={score:0.3f}, leaves={leaves}, decrease={decrease}")
     
-        # print(regr.score(X_test,y_test))
-    # result = sklearn.inspection.permutation_importance(regr, X_test, y_test, 
-                                    # n_repeats=10, random_state=0)
-    
-    # heights = result.importances_mean
+    # assemble all importance with feature names and colors
     heights = regr.feature_importances_
     ticks = X.columns
-    
-    # hft_inds = [i for i in range(len(ticks)) if "hft" in ticks[i]]
-    # hft_all_imp = heights[hft_inds].sum()
-    # heights = np.delete(heights, hft_inds)
-    # ticks = [tick for tick in ticks if "hft" not in tick]
-    # ticks = ticks + ["hft"]
-    # heights = np.append(heights, hft_all_imp)
-    
-    # order = np.argsort(heights)
-    
-    # heights = heights[order]
-    # ticks = np.array(ticks)[order]
-    
-    # enc = sklearn.preprocessing.OneHotEncoder()
-    # df = df.join(pd.DataFrame(enc.fit(df.hft.values.reshape(-1,1)).\
-                                      # transform(df.hft.values.reshape(-1,1)).toarray(),\
-                              # columns = [f"hft{i}" for i in range(1,7)]))
-    # df = df.drop(["hft"], axis =1)
-    
-    #convert Ks to log
-    # df.ks = np.log10(df.ks)
-    # df.drop(['elevation', 'aspect', 'slope', 'twi','dry_season_length', 'ndvi', \
-             # 'vpd_mean', 'vpd_std'], axis = 1, inplace = True)
-    # print(df.shape)
-    
+  
     green, brown, blue, yellow, plant, soil, climate, topo = get_categories_and_colors()
     
     imp = pd.DataFrame(index = ticks, columns = ["importance"], data = heights)
-    
-    
     
     def _colorize(x):
         if x in plant:
@@ -147,24 +123,16 @@ def regress(df):
             return blue
         else:
             return yellow
-        
     imp["color"] = imp.index
     imp.color = imp.color.apply(_colorize)
     imp["symbol"] = imp.index
-    # imp.loc["hft","symbol"] = "Hydraulic\nfunctional type"
-    # imp.loc["pft","symbol"] = "PFT"
+    # cleanup variable names
     imp.loc["sand","symbol"] = "Sand fraction"
     imp.loc["clay","symbol"] = "Clay fraction"
     imp.loc["silt","symbol"] = "Silt fraction"
     imp.loc["canopy_height","symbol"] = "Canopy height"
     imp.loc["ks","symbol"] = "K$_s$"
     imp.loc["thetas","symbol"] = r"Porosity"
-    # imp.loc["root_depth","symbol"] = "Root depth"
-    # imp.loc["g1","symbol"] = "$g_1$"
-    # imp.loc["gpmax","symbol"] = "Max. xylem\nconductance"
-    # imp.loc["isohydricity","symbol"] = "Isohydricity"
-    # imp.loc["c","symbol"] = "Xylem\ncapacitance"
-    # imp.loc["p50","symbol"] = "$\psi_{50}$"
     imp.sort_values("importance", ascending = True, inplace = True)
     print(imp.groupby("color").sum().round(2))
 
