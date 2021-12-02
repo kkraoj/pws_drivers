@@ -58,6 +58,7 @@ def prettify_names(names):
     new_names = {"ks":"K$_s$",
                  "ndvi":"NDVI",
                  "vpd_mean":"VPD$_{mean}$",
+                 "vpd_std":"VPD$_{sd}$",
                  "thetas":"Soil porosity",
                  "elevation":"Elevation",
                  "dry_season_length":"Dry season length",
