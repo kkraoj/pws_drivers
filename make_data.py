@@ -94,7 +94,7 @@ def create_df(array,keys):
         ctr+=1
     return df
 
-def create_h5():
+def create_h5(store_path):
     """
     Bring together all features and labels (pws). drop nans. Store it as a h5
     file. And return it as a dataframe of shape (# of examples, # of features + 1)
@@ -113,7 +113,8 @@ def create_h5():
     keys = ['pws','silt','sand','clay', 'ks','thetas','isohydricity',\
         'root_depth','canopy_height','hft','p50','gpmax', 'c','g1','pft',
         "elevation","aspect","slope","twi","dry_season_length","ndvi",\
-            "vpd_mean","vpd_std", "dist_to_water","agb","ppt_mean","ppt_std","lc"]
+            "vpd_mean","vpd_std", "dist_to_water","agb","ppt_mean","ppt_std","lc",\
+                "t_mean","t_std","ppt_lte_100"]
     
     array = np.zeros((len(keys), data['pws'].shape[0],data['pws'].shape[1])).astype('float')
     array[0] = data['pws']
@@ -162,16 +163,16 @@ def create_h5():
     array[26]= ds.GetRasterBand(band).ReadAsArray()
     ds = gdal.Open("D:/Krishna/projects/wildfire_from_lfmc/data/mean/landcover.tif")
     array[27]= ds.GetRasterBand(band).ReadAsArray()
-    
+    ds = gdal.Open("D:/Krishna/projects/wildfire_from_lfmc/data/mean/tMean.tif")
+    array[28]= ds.GetRasterBand(band).ReadAsArray() 
+    ds = gdal.Open("D:/Krishna/projects/wildfire_from_lfmc/data/mean/tStd.tif")
+    array[29]= ds.GetRasterBand(band).ReadAsArray() 
+    ds = gdal.Open("D:/Krishna/projects/wildfire_from_lfmc/data/mean/ppt_lte_100.tif")
+    array[30]= ds.GetRasterBand(band).ReadAsArray() 
     ds = None
     
     df = create_df(array,keys)
     df.dropna(subset = ["pws"], inplace = True)
-    
-    # df.loc[df['elevation']<-1e3] = np.nan
-    # df.loc[df['slope']<-1e3] = np.nan
-    # df.loc[df['aspect']>1e3] = np.nan
-    # df.loc[df['twi']>1e4] = np.nan
     
     
     df.describe()
@@ -182,7 +183,7 @@ def create_h5():
     df.loc[df['thetas']<-1] = np.nan
     df.loc[df['pft']<50] = np.nan
     
-    
+    df.loc[df['elevation']<-1e3] = np.nan
     df.loc[df['isohydricity']>1e3] = np.nan
     df.loc[df['root_depth']<-1] = np.nan
     df.loc[df['hft']<-1e3] = np.nan
@@ -195,7 +196,7 @@ def create_h5():
     df.loc[df['twi']>2e3] = np.nan
     
 
-    store = pd.HDFStore('D:/Krishna/projects/pws_drivers/data/store_plant_soil_topo_climate.h5')
+    store = pd.HDFStore(store_path)
     store['df'] = df
     store.close()
     
@@ -238,13 +239,14 @@ def plot_heatmap(df):
 
 def main():
     #%% make and save dataframe:
+    store_path = 'D:/Krishna/projects/pws_drivers/data/store_plant_soil_topo_climate_2_dec_2021.h5'
     # This can be run in Krishna's computer only because there are many tif files required
-    # create_h5()
+    # create_h5(store_path)
     
     #%% Load h5
     # make sure dir_data in dirs.py points to location of store_plant_soil_topo_climate.h5
     # This is typically location of repo/data
-    store = pd.HDFStore(os.path.join(dirs.dir_data, 'store_plant_soil_topo_climate.h5'))
+    store = pd.HDFStore(store_path)
     df =  store['df']
     store.close()
     df.columns = df.columns.astype(str)    
