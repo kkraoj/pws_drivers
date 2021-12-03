@@ -113,7 +113,7 @@ def create_h5():
     keys = ['pws','silt','sand','clay', 'ks','thetas','isohydricity',\
         'root_depth','canopy_height','hft','p50','gpmax', 'c','g1','pft',
         "elevation","aspect","slope","twi","dry_season_length","ndvi",\
-            "vpd_mean","vpd_std", "dist_to_water","agb","ppt_mean","ppt_std","lc"]
+            "vpd_mean","vpd_std", "dist_to_water","agb","ppt_mean","ppt_std","lc","n"]
     
     array = np.zeros((len(keys), data['pws'].shape[0],data['pws'].shape[1])).astype('float')
     array[0] = data['pws']
@@ -162,7 +162,8 @@ def create_h5():
     array[26]= ds.GetRasterBand(band).ReadAsArray()
     ds = gdal.Open("D:/Krishna/projects/wildfire_from_lfmc/data/mean/landcover.tif")
     array[27]= ds.GetRasterBand(band).ReadAsArray()
-    
+    array[28]= get_value("D:/Krishna/projects/vod_from_mortality/codes/data/RS_data/soil/Hydraul_Param_SoilGrids_Schaap_0/n_30cm.tif",lons,lats)
+
     ds = None
     
     df = create_df(array,keys)
@@ -195,7 +196,7 @@ def create_h5():
     df.loc[df['twi']>2e3] = np.nan
     
 
-    store = pd.HDFStore('D:/Krishna/projects/pws_drivers/data/store_plant_soil_topo_climate.h5')
+    store = pd.HDFStore('D:/Krishna/projects/pws_drivers/data/store_plant_soil_2_dec_2021.h5')
     store['df'] = df
     store.close()
     

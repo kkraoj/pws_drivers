@@ -27,10 +27,13 @@ def cleanup_data(path):
     path is where h5 file is stored
     """
     
-    store = pd.HDFStore(os.path.join(dirs.dir_data, 'store_plant_soil_topo_climate.h5'))
+    store = pd.HDFStore(path)
     df =  store['df']   # save it
     store.close()
-    df.drop(["pft","isohydricity",'root_depth', 'hft', 'p50', 'gpmax', 'c', 'g1'],axis = 1, inplace = True)
+    # df.drop(["pft","isohydricity",'root_depth', 'hft', 'p50', 'gpmax', 'c', 'g1'],axis = 1, inplace = True)
+    keep = ['pws', 'silt', 'sand', 'clay', 'ks', 'thetas', 'isohydricity',
+       'root_depth', 'canopy_height', 'hft', 'p50', 'gpmax', 'c', 'g1', 'n']
+    df = df[keep]
     df.dropna(inplace = True)
     df.reset_index(inplace = True, drop = True)
     
@@ -47,8 +50,9 @@ def get_categories_and_colors():
     blue = "dodgerblue"
     yellow = "khaki"
     
-    plant = ['canopy_height', "agb",'ndvi', "lc"]
-    soil = ['sand',  'clay', 'silt','thetas', 'ks']
+    plant = ['canopy_height', "agb",'ndvi', "lc",'isohydricity',
+       'root_depth', 'canopy_height', 'hft', 'p50', 'gpmax', 'c', 'g1']
+    soil = ['sand',  'clay', 'silt','thetas', 'ks','n']
     climate = [ 'dry_season_length', 'vpd_mean', 'vpd_std',"ppt_mean","ppt_std"]
     topo = ['elevation', 'aspect', 'slope', 'twi',"dist_to_water"]
     
@@ -59,12 +63,24 @@ def prettify_names(names):
                  "ndvi":"NDVI",
                  "vpd_mean":"VPD$_{mean}$",
                  "vpd_std":"VPD$_{sd}$",
-                 "thetas":"Soil porosity",
+                 "thetas":"Soil\nporosity",
                  "elevation":"Elevation",
                  "dry_season_length":"Dry season length",
                  "ppt_mean":"Precipitation$_{mean}$",
                  "ppt_std":"Precipitation$_{sd}$",
-                 "agb":"Above-ground biomass"
+                 "agb":"Above-ground biomass",
+                 "sand":"Sand fraction",
+                 "clay":"Sand fraction",
+                 "silt":"Silt fraction",
+                 "canopy_height": "Canopy height",
+                 "isohydricity":"Isohydricity",
+                 "root_depth":"Root depth",
+                 "hft":"Hydraulic\nfunctional type",
+                 "p50":"$\psi_{50}$",
+                 "gpmax":"Max. xylem\nconductance",
+                 "c":"Xylem\ncapacitance",
+                 "g1":"g$_1$",
+                 "n":"$n$"
                  }
     return [new_names[key] for key in names]
     
@@ -131,12 +147,7 @@ def regress(df):
     imp.color = imp.color.apply(_colorize)
     imp["symbol"] = imp.index
     # cleanup variable names
-    imp.loc["sand","symbol"] = "Sand fraction"
-    imp.loc["clay","symbol"] = "Clay fraction"
-    imp.loc["silt","symbol"] = "Silt fraction"
-    imp.loc["canopy_height","symbol"] = "Canopy height"
-    imp.loc["ks","symbol"] = "K$_s$"
-    imp.loc["thetas","symbol"] = r"Porosity"
+    imp.symbol = prettify_names(imp.symbol)
     imp.sort_values("importance", ascending = True, inplace = True)
     print(imp.groupby("color").sum().round(2))
 
@@ -182,15 +193,11 @@ def plot_importance(imp):
     legend_elements = [matplotlib.patches.Patch(facecolor=green, edgecolor='grey',
                              label='Plant'), 
                        matplotlib.patches.Patch(facecolor=brown, edgecolor='grey',
-                             label='Soil'), 
-                       matplotlib.patches.Patch(facecolor=yellow, edgecolor='grey',
-                             label='Topography'), 
-                       matplotlib.patches.Patch(facecolor=blue, edgecolor='grey',
-                             label='Climate')]
+                             label='Soil')]
     ax.legend(handles=legend_elements)
     ax.set_xlabel("Variable importance")
     ax.set_ylabel("")
-
+    ax.set_title("Hydraulic traits'\npredictive power for PWS",fontweight='bold')
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
     
@@ -247,15 +254,15 @@ def plot_pdp(regr, X_test):
     
 def main():
     #%% Load data
-    path = os.path.join(dirs.dir_data, 'store_plant_soil_topo_climate.h5')
+    path = os.path.join(dirs.dir_data, 'store_plant_soil_2_dec_2021.h5')
     df = cleanup_data(path)
     #%% train rf
     X_test, y_test, regr, score,  imp = regress(df)
     #%% make plots
     ax = plot_importance(imp)
-    ax = plot_importance_by_category(imp)
+    # ax = plot_importance_by_category(imp)
     ax = plot_preds_actual(X_test, y_test, regr, score)
-    plot_pdp(regr, X_test)
+    # plot_pdp(regr, X_test)
     
 
 if __name__ == "__main__":
