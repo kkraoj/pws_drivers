@@ -247,8 +247,8 @@ def plot_pdp(regr, X_test):
     """
     # Which features need PDPs? print below line and choose the numbers
     # corresponding to the feature
-    # print(list(zip(X_test.columns, range(X_test.shape[1]))))
-    features = [3,10,6,17, 16, 11, 13,12]
+    print(list(zip(X_test.columns, range(X_test.shape[1]))))
+    features = [3,7, 12, 4, 13, 11]
     feature_names = list(X_test.columns[features])
     feature_names = prettify_names(feature_names)
     for feature, feature_name in zip(features, feature_names):
