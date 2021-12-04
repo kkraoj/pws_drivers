@@ -20,7 +20,8 @@ import sklearn.metrics
 
 import dirs
 
-sns.set(font_scale = 1., style = "ticks")
+sns.set(font_scale = 1, style = "ticks")
+plt.rcParams.update({'font.size': 18})
 
 def cleanup_data(path):
     """
@@ -55,19 +56,19 @@ def get_categories_and_colors():
     return green, brown, blue, yellow, plant, soil, climate, topo
 
 def prettify_names(names):
-    new_names = {"ks":"K$_s$",
+    new_names = {"ks":"K$_{s,max}$",
                  "ndvi":"NDVI",
                  "vpd_mean":"VPD$_{mean}$",
-                 "vpd_std":"VPD$_{sd}$",
-                 "thetas":"Soil\nporosity",
+                 "vpd_std":"VPD$_{st dev}$",
+                 "thetas":"Soil porosity",
                  "elevation":"Elevation",
                  "dry_season_length":"Dry season length",
-                 "ppt_mean":"Precipitation$_{mean}$",
-                 "ppt_std":"Precipitation$_{sd}$",
-                 "agb":"Above-ground\nbiomass",
-                 "sand":"Sand fraction",
-                 "clay":"Sand fraction",
-                 "silt":"Silt fraction",
+                 "ppt_mean":"Precip$_{mean}$",
+                 "ppt_std":"Precip$_{st dev}$",
+                 "agb":"Biomass",
+                 "sand":"Sand %",
+                 "clay":"Clay %",
+                 "silt":"Silt %",
                  "canopy_height": "Canopy height",
                  "isohydricity":"Isohydricity",
                  "root_depth":"Root depth",
@@ -77,14 +78,14 @@ def prettify_names(names):
                  "c":"Xylem\ncapacitance",
                  "g1":"g$_1$",
                  "n":"$n$",
-                 "pft":"Plant\nfunctional type",
+                 "pft":"Plant Functional Type",
                  "aspect":"Aspect",
-                 "slope":"Terrain slope",
-                 "twi":"Topographic\n wetness index",
+                 "slope":"Slope",
+                 "twi":"TWI",
                  "ppt_lte_100":"Dry months",
-                 "dist_to_water":"Distance\nto water",
-                 "t_mean":"Temperature$_{mean}$",
-                 "t_std":"Temperature$_{sd}$",
+                 "dist_to_water":"Dist to water",
+                 "t_mean":"Temp$_{mean}$",
+                 "t_std":"Temp$_{st dev}$",
                  }
     return [new_names[key] for key in names]
     
@@ -189,10 +190,10 @@ def plot_importance(imp):
 
     """
     
-    fig, ax = plt.subplots(figsize = (3.5,7))
+    fig, ax = plt.subplots(figsize = (5.5,7))
     green, brown, blue, yellow, plant, soil, climate, topo = get_categories_and_colors()
 
-    imp.plot.barh(y = "importance",x="symbol",color = imp.color, edgecolor = "grey", ax = ax)
+    imp.plot.barh(y = "importance",x="symbol",color = imp.color, edgecolor = "grey", ax = ax, fontsize = 18)
 
     legend_elements = [matplotlib.patches.Patch(facecolor=green, edgecolor='grey',
                              label='Plant'), 
@@ -202,9 +203,10 @@ def plot_importance(imp):
                              label='Topography'), 
                        matplotlib.patches.Patch(facecolor=blue, edgecolor='grey',
                              label='Climate')]
-    ax.legend(handles=legend_elements)
-    ax.set_xlabel("Variable importance")
+    ax.legend(handles=legend_elements, fontsize = 18)
+    ax.set_xlabel("Variable importance", fontsize = 18)
     ax.set_ylabel("")
+    ax.set_xlim(0,0.21)
 
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
@@ -235,6 +237,25 @@ def plot_importance_by_category(imp):
     ax.spines['top'].set_visible(False)
     
     plt.tight_layout()
+    
+def plot_importance_plants(imp):
+    '''
+    Feature importance of the plant categories only
+    '''
+    
+    plantsImp = imp[imp['color'] == "yellowgreen"]
+    plantsImp = plantsImp.sort_values("importance")
+    
+    fig, ax = plt.subplots(figsize = (3.5,2))
+    plantsImp.plot.barh(y = "importance",x = "symbol", color = plantsImp.color, edgecolor = "grey", ax = ax,legend =False )
+    
+    ax.set_xlabel("Variable importance")
+    ax.set_ylabel("")
+    # Hide the right and top spines
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    
+    plt.tight_layout()
 
 def plot_pdp(regr, X_test):
     """
@@ -255,12 +276,14 @@ def plot_pdp(regr, X_test):
         pd_results = sklearn.inspection.partial_dependence(regr, X_test, feature)
         fig, ax = plt.subplots(figsize = (4,4))
         ax.plot(pd_results[1][0], pd_results[0][0])
-        ax.set_xlabel(feature_name)
-        ax.set_ylabel("Plant-water sensitivity")
+        ax.set_xlabel(feature_name, fontsize = 18)
+        ax.set_ylabel("Plant-water sensitivity", fontsize = 18)
         plt.show()
 
     
 def main():
+    plt.rcParams.update({'font.size': 18})
+
     #%% Load data
     path = os.path.join(dirs.dir_data, 'store_plant_soil_topo_climate_2_dec_2021.h5')
     df = cleanup_data(path)
@@ -269,6 +292,7 @@ def main():
     #%% make plots
     ax = plot_importance(imp)
     ax = plot_importance_by_category(imp)
+    ax = plot_importance_plants(imp)
     ax = plot_preds_actual(X_test, y_test, regr, score)
     plot_pdp(regr, X_test)
     
