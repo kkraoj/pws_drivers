@@ -104,7 +104,7 @@ def create_h5(store_path):
 
     """
     data = dict()
-    ds = gdal.Open(os.path.join("D:/Krishna/projects/wildfire_from_lfmc", "data","arr_pixels_lfmc_dfmc_anomalies","PAS_6_jan_2021.tif"))
+    ds = gdal.Open(os.path.join(dirs.dir_data, "pws_features","PAS_6_jan_2021.tif"))
     gt = ds.GetGeoTransform()
     data['pws'] = np.array(ds.GetRasterBand(1).ReadAsArray())
     
@@ -114,61 +114,64 @@ def create_h5(store_path):
         'root_depth','canopy_height','hft','p50','gpmax', 'c','g1','pft',
         "elevation","aspect","slope","twi","dry_season_length","ndvi",\
             "vpd_mean","vpd_std", "dist_to_water","agb","ppt_mean","ppt_std","lc",\
-                "t_mean","t_std","ppt_lte_100"]
+                "t_mean","t_std","ppt_lte_100", "lon","lat"]
     
     array = np.zeros((len(keys), data['pws'].shape[0],data['pws'].shape[1])).astype('float')
     array[0] = data['pws']
     
     
 
-    array[1]= get_value("D:/Krishna/projects/vod_from_mortality/codes/data/RS_data/soil/NACP_MSTMIP_UNIFIED_NA_SOIL_MA_1242/data/Unified_NA_Soil_Map_Subsoil_Silt_Fraction.tif",lons,lats)
-    array[2]= get_value("D:/Krishna/projects/vod_from_mortality/codes/data/RS_data/soil/NACP_MSTMIP_UNIFIED_NA_SOIL_MA_1242/data/Unified_NA_Soil_Map_Subsoil_Sand_Fraction.tif",lons,lats)
-    array[3]= get_value("D:/Krishna/projects/vod_from_mortality/codes/data/RS_data/soil/NACP_MSTMIP_UNIFIED_NA_SOIL_MA_1242/data/Unified_NA_Soil_Map_Subsoil_Clay_Fraction.tif",lons,lats)
-    array[4]= get_value("D:/Krishna/projects/vod_from_mortality/codes/data/RS_data/soil/Hydraul_Param_SoilGrids_Schaap_0/Ks_30cm.tif",lons,lats)
-    array[5]= get_value("D:/Krishna/projects/vod_from_mortality/codes/data/RS_data/soil/Hydraul_Param_SoilGrids_Schaap_0/thetas_30cm.tif",lons,lats)
+    array[1]= get_value(os.path.join(dirs.dir_data, "pws_features","Unified_NA_Soil_Map_Subsoil_Silt_Fraction.tif"),lons,lats)
+    array[2]= get_value(os.path.join(dirs.dir_data, "pws_features","Unified_NA_Soil_Map_Subsoil_Sand_Fraction.tif"),lons,lats)
+    array[3]= get_value(os.path.join(dirs.dir_data, "pws_features","Unified_NA_Soil_Map_Subsoil_Clay_Fraction.tif"),lons,lats)
+    array[4]= get_value(os.path.join(dirs.dir_data, "pws_features","Ks_30cm.tif"),lons,lats)
+    array[5]= get_value(os.path.join(dirs.dir_data, "pws_features","thetas_30cm.tif"),lons,lats)
     
 
     
-    array[6]= get_value("D:/Krishna/projects/wildfire_from_lfmc/data/traits/isohydricity.tif",lons,lats)
-    array[7] = get_value("D:/Krishna/projects/wildfire_from_lfmc/data/traits/root_depth.tif",lons,lats)
-    array[8] = get_value("D:/Krishna/projects/vod_from_mortality/codes/data/RS_data/canopy_height/canopy_height.tif",lons,lats)
-    array[9]= get_value("D:/Krishna/projects/wildfire_from_lfmc/data/traits/yanlan_HESS/HFT.tif",lons,lats)
-    array[10]= get_value("D:/Krishna/projects/wildfire_from_lfmc/data/traits/yanlan_HESS/P50_liu.tif",lons,lats)
-    array[11]= get_value("D:/Krishna/projects/wildfire_from_lfmc/data/traits/yanlan_HESS/gpmax_50.tif",lons,lats)
-    array[12]= get_value("D:/Krishna/projects/wildfire_from_lfmc/data/traits/yanlan_HESS/C_50.tif",lons,lats)
-    array[13]= get_value("D:/Krishna/projects/wildfire_from_lfmc/data/traits/yanlan_HESS/g1_50.tif",lons,lats)
-    array[14]= get_value("D:/Krishna/projects/grid_fire/data/nlcd/nlcd_2016_4km.tif",lons,lats)
+    array[6]= get_value(os.path.join(dirs.dir_data, "pws_features","isohydricity.tif"),lons,lats)
+    array[7] = get_value(os.path.join(dirs.dir_data, "pws_features","root_depth.tif"),lons,lats)
+    array[8] = get_value(os.path.join(dirs.dir_data, "pws_features","canopy_height.tif"),lons,lats)
+    array[9]= get_value(os.path.join(dirs.dir_data, "pws_features","HFT.tif"),lons,lats)
+    array[10]= get_value(os.path.join(dirs.dir_data, "pws_features","P50_liu.tif"),lons,lats)
+    array[11]= get_value(os.path.join(dirs.dir_data, "pws_features","gpmax_50.tif"),lons,lats)
+    array[12]= get_value(os.path.join(dirs.dir_data, "pws_features","C_50.tif"),lons,lats)
+    array[13]= get_value(os.path.join(dirs.dir_data, "pws_features","g1_50.tif"),lons,lats)
+    array[14]= get_value(os.path.join(dirs.dir_data, "pws_features","nlcd_2016_4km.tif"),lons,lats)
     
-    array[15] = get_value("D:/Krishna/projects/vod_from_mortality/codes/data/RS_data/Elevation/Elevation/usa_dem.tif",lons,lats)
-    array[16] = get_value("D:/Krishna/projects/vod_from_mortality/codes/data/RS_data/Elevation/ASPECT/usa_aspect_wgs1984_clip.tif",lons,lats)
-    array[17] = get_value("D:/Krishna/projects/vod_from_mortality/codes/data/RS_data/Elevation/Elevation/usa_slope_project.tif",lons,lats)
-    array[18]= get_value("D:/Krishna/projects/vod_from_mortality/codes/data/RS_data/Elevation/twi/twi.tif",lons,lats)
+    array[15] = get_value(os.path.join(dirs.dir_data, "pws_features","usa_dem.tif"),lons,lats)
+    array[16] = get_value(os.path.join(dirs.dir_data, "pws_features","usa_aspect_wgs1984_clip.tif"),lons,lats)
+    array[17] = get_value(os.path.join(dirs.dir_data, "pws_features","usa_slope_project.tif"),lons,lats)
+    array[18]= get_value(os.path.join(dirs.dir_data, "pws_features","twi.tif"),lons,lats)
     
     band = 1
-    ds = gdal.Open("D:/Krishna/projects/wildfire_from_lfmc/data/mean/fireSeasonLength.tif")
+    ds = gdal.Open(os.path.join(dirs.dir_data, "pws_features","fireSeasonLength.tif"))
     array[19]= ds.GetRasterBand(band).ReadAsArray()
-    ds =  gdal.Open("D:/Krishna/projects/wildfire_from_lfmc/data/mean/ndvi_mean.tif")
+    ds =  gdal.Open(os.path.join(dirs.dir_data, "pws_features","ndvi_mean.tif"))
     array[20] =ds.GetRasterBand(band).ReadAsArray()
-    ds = gdal.Open("D:/Krishna/projects/wildfire_from_lfmc/data/mean/vpd_mean.tif")
+    ds = gdal.Open(os.path.join(dirs.dir_data, "pws_features","vpd_mean.tif"))
     array[21] = ds.GetRasterBand(band).ReadAsArray()
-    ds = gdal.Open("D:/Krishna/projects/wildfire_from_lfmc/data/mean/vpdStd.tif")
+    ds = gdal.Open(os.path.join(dirs.dir_data, "pws_features","vpdStd.tif"))
     array[22]= ds.GetRasterBand(band).ReadAsArray()
-    ds = gdal.Open("D:/Krishna/projects/pws_drivers/data/distance_to_water_bodies.tif")
+    ds = gdal.Open(os.path.join(dirs.dir_data, "pws_features","distance_to_water_bodies.tif"))
     array[23]= ds.GetRasterBand(band).ReadAsArray()
-    ds = gdal.Open("D:/Krishna/projects/pws_drivers/data/agb_2020.tif")
+    ds = gdal.Open(os.path.join(dirs.dir_data, "pws_features","agb_2020.tif"))
     array[24]= ds.GetRasterBand(band).ReadAsArray()
-    ds = gdal.Open("D:/Krishna/projects/wildfire_from_lfmc/data/mean/pptMean.tif")
+    ds = gdal.Open(os.path.join(dirs.dir_data, "pws_features","pptMean.tif"))
     array[25]= ds.GetRasterBand(band).ReadAsArray()
-    ds = gdal.Open("D:/Krishna/projects/wildfire_from_lfmc/data/mean/pptStd.tif")
+    ds = gdal.Open(os.path.join(dirs.dir_data, "pws_features","pptStd.tif"))
     array[26]= ds.GetRasterBand(band).ReadAsArray()
-    ds = gdal.Open("D:/Krishna/projects/wildfire_from_lfmc/data/mean/landcover.tif")
+    ds = gdal.Open(os.path.join(dirs.dir_data, "pws_features","landcover.tif"))
     array[27]= ds.GetRasterBand(band).ReadAsArray()
-    ds = gdal.Open("D:/Krishna/projects/wildfire_from_lfmc/data/mean/tMean.tif")
+    ds = gdal.Open(os.path.join(dirs.dir_data, "pws_features","tMean.tif"))
     array[28]= ds.GetRasterBand(band).ReadAsArray() 
-    ds = gdal.Open("D:/Krishna/projects/wildfire_from_lfmc/data/mean/tStd.tif")
+    ds = gdal.Open(os.path.join(dirs.dir_data, "pws_features","tStd.tif"))
     array[29]= ds.GetRasterBand(band).ReadAsArray() 
-    ds = gdal.Open("D:/Krishna/projects/wildfire_from_lfmc/data/mean/ppt_lte_100.tif")
+    ds = gdal.Open(os.path.join(dirs.dir_data, "pws_features","ppt_lte_100.tif"))
     array[30]= ds.GetRasterBand(band).ReadAsArray() 
+    array[31]= lons
+    array[32]= lats
+    
     ds = None
     
     df = create_df(array,keys)
@@ -239,12 +242,12 @@ def plot_heatmap(df):
 
 def main():
     #%% make and save dataframe:
-    store_path = 'D:/Krishna/projects/pws_drivers/data/store_plant_soil_topo_climate_2_dec_2021.h5'
+    store_path = os.path.join(dirs.dir_data, 'store_plant_soil_topo_climate_6_apr_2022.h5')
     # This can be run in Krishna's computer only because there are many tif files required
-    # create_h5(store_path)
+    create_h5(store_path)
     
     #%% Load h5
-    # make sure dir_data in dirs.py points to location of store_plant_soil_topo_climate.h5
+    # make sure dirs.dir_data in dirs.py points to location of store_plant_soil_topo_climate.h5
     # This is typically location of repo/data
     store = pd.HDFStore(store_path)
     df =  store['df']
