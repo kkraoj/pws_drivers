@@ -21,6 +21,7 @@ import sklearn.metrics
 import dirs
 
 sns.set(font_scale = 1., style = "ticks")
+plt.style.use("pnas")
 
 def cleanup_data(path):
     """
@@ -171,7 +172,7 @@ def plot_preds_actual(X_test, y_test, regr, score):
     return ax
 
 
-def plot_importance(imp):
+def plot_importance(imp, save_name, save):
     """
     plot feature importance for all features
 
@@ -185,14 +186,14 @@ def plot_importance(imp):
 
     """
     
-    fig, ax = plt.subplots(figsize = (3.5,6))
+    fig, ax = plt.subplots(figsize = (88/25.4,6))
     green, brown, blue, yellow, plant, soil, climate, topo = get_categories_and_colors()
 
-    imp.plot.barh(y = "importance",x="symbol",color = imp.color, edgecolor = "grey", ax = ax)
+    imp.plot.barh(y = "importance",x="symbol",color = imp.color, edgecolor = "k", ax = ax)
 
-    legend_elements = [matplotlib.patches.Patch(facecolor=green, edgecolor='grey',
+    legend_elements = [matplotlib.patches.Patch(facecolor=green, edgecolor='k',
                              label='Plant'), 
-                       matplotlib.patches.Patch(facecolor=brown, edgecolor='grey',
+                       matplotlib.patches.Patch(facecolor=brown, edgecolor='k',
                              label='Soil')]
     ax.legend(handles=legend_elements)
     ax.set_xlabel("Variable importance")
@@ -202,6 +203,8 @@ def plot_importance(imp):
     ax.spines['top'].set_visible(False)
     
     plt.tight_layout()
+    if save:
+        plt.savefig(save_name, bbox_inches = "tight")
     return ax
 
 def plot_importance_by_category(imp):
@@ -214,7 +217,8 @@ def plot_importance_by_category(imp):
     
     combined = combined.sort_values("importance")
     fig, ax = plt.subplots(figsize = (3.5,2))
-    combined.plot.barh(y = "importance",x="category",color = combined.color, edgecolor = "grey", ax = ax,legend =False )
+    combined.plot.barh(y = "importance",x="category",color = combined.color, \
+                       edgecolor = "k", ax = ax,legend =False )
     # ax.set_yticks(range(len(ticks)))
     # ax.set_yticklabels(ticks)
     
@@ -258,10 +262,11 @@ def main():
     df = cleanup_data(path)
     #%% train rf
     X_test, y_test, regr, score,  imp = regress(df)
+    print(imp)
     #%% make plots
-    ax = plot_importance(imp)
+    ax = plot_importance(imp, save_name = "C:/Users/kkrao/Dropbox/meetingsKrishna/Figures/wildfire_from_lfmc/fig4.eps", save = True)
     # ax = plot_importance_by_category(imp)
-    ax = plot_preds_actual(X_test, y_test, regr, score)
+    # ax = plot_preds_actual(X_test, y_test, regr, score)
     # plot_pdp(regr, X_test)
     
 
