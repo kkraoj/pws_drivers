@@ -31,7 +31,7 @@ def cleanup_data(path):
     store = pd.HDFStore(path)
     df =  store['df']   # save it
     store.close()
-    df.drop(["lc","isohydricity",'root_depth', 'hft', 'p50', 'gpmax', 'c', 'g1',"dry_season_length"],axis = 1, inplace = True)
+    df.drop(["lc","isohydricity",'root_depth', 'hft', 'p50', 'gpmax', 'c', 'g1',"dry_season_length","lat","lon"],axis = 1, inplace = True)
     df.dropna(inplace = True)
     df.reset_index(inplace = True, drop = True)
     
@@ -86,6 +86,8 @@ def prettify_names(names):
                  "dist_to_water":"Dist to water",
                  "t_mean":"Temp$_{mean}$",
                  "t_std":"Temp$_{st dev}$",
+                 "lon":"Lon",
+                 "lat":"Lat",
                  }
     return [new_names[key] for key in names]
     
@@ -285,7 +287,7 @@ def main():
     plt.rcParams.update({'font.size': 18})
 
     #%% Load data
-    path = os.path.join(dirs.dir_data, 'store_plant_soil_topo_climate_2_dec_2021.h5')
+    path = os.path.join(dirs.dir_data, 'store_plant_soil_topo_climate_PWSthrough2021.h5')
     df = cleanup_data(path)
     #%% train rf
     X_test, y_test, regr, score,  imp = regress(df)

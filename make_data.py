@@ -11,7 +11,7 @@ Shape of dataframe = (# of pixels, # of features + 1)
 import os
 
 import pandas as pd
-import gdal
+from osgeo import gdal
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -104,7 +104,7 @@ def create_h5(store_path):
 
     """
     data = dict()
-    ds = gdal.Open(os.path.join(dirs.dir_data, "pws_features","PAS_6_jan_2021.tif"))
+    ds = gdal.Open(os.path.join(dirs.dir_data, "pws_features","PWS_through2021.tif"))
     gt = ds.GetGeoTransform()
     data['pws'] = np.array(ds.GetRasterBand(1).ReadAsArray())
     
@@ -242,7 +242,7 @@ def plot_heatmap(df):
 
 def main():
     #%% make and save dataframe:
-    store_path = os.path.join(dirs.dir_data, 'store_plant_soil_topo_climate_6_apr_2022.h5')
+    store_path = os.path.join(dirs.dir_data, 'store_plant_soil_topo_climate_PWSthrough2021.h5')
     # This can be run in Krishna's computer only because there are many tif files required
     create_h5(store_path)
     
