@@ -197,8 +197,10 @@ def plot_error_pattern(path):
     df = cleanup_data(path)
     
     #make map_predictionError function later
+    X_test, y_test, regrn, score,  imp = regress(df)
+    
     XAll = df.drop("pws",axis = 1)
-    y_hat = regr.predict(XAll)
+    y_hat = regrn.predict(XAll)
     predError = y_hat - df['pws']
     
     filename = os.path.join("C:/repos/data/pws_features/PWS_through2021.tif") #load an old PWS file. 
@@ -223,23 +225,6 @@ def plot_error_pattern(path):
                    vmin=1, vmax=1.5)
     plt.title('prediction error')
     cbar = plt.colorbar(im)
-    
-    #plot other variables to also look at NaN and error patterns
-    store = pd.HDFStore(path)
-    dfAll =  store['df']   # save it    
-    store.close()
-    dfAll.dropna(subset=['lat', 'lon'], inplace=True)
-    latIndAll = np.round( (dfAll['lat'].to_numpy() - geotransform[3])/geotransform[5] ).astype(int)
-    lonIndAll = np.round( (dfAll['lon'].to_numpy() - geotransform[0])/geotransform[1] ).astype(int)
-    
-    for feature in dfAll.head():
-        thisMap = np.empty(np.shape(pws)) * np.nan
-        thisMap[latIndAll, lonIndAll] = dfAll[feature].to_numpy()
-        fig, ax = plt.subplots()
-        ax.imshow(thisMap, interpolation='none')
-        plt.title(feature)
-    
-    return ax1
 
 def plot_importance(imp):
     """
