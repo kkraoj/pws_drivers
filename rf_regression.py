@@ -9,6 +9,7 @@ import os
 
 import numpy as np
 import pandas as pd
+from osgeo import gdal
 import sklearn.ensemble
 import sklearn.model_selection
 import matplotlib.pyplot as plt
@@ -177,6 +178,71 @@ def plot_preds_actual(X_test, y_test, regr, score):
     ax.annotate(f"R$^2$={score:0.2f}", (0.1,0.9),xycoords = "axes fraction", ha = "left")
     return ax
 
+def plot_error_pattern(path):
+    """
+    Make map of prediction error to visually test if there is a spatial pattern
+    Also plot other inputs for comparison
+
+    Parameters
+    ----------
+    path: location where H5 file with PWS and all input features is stored
+
+    Returns
+    -------
+    ax: axis handle
+
+    """
+    # Load data
+    path = os.path.join(dirs.dir_data, 'store_plant_soil_topo_climate_PWSthrough2021.h5')
+    df = cleanup_data(path)
+    
+    # Train rf
+    X_test, y_test, regr, score,  imp = regress(df)
+    
+    #make map_predictionError function later
+    XAll = df.drop("pws",axis = 1)
+    y_hat = regr.predict(XAll)
+    predError = y_hat - df['pws']
+    
+    filename = os.path.join("C:/repos/data/pws_features/PWS_through2021.tif") #load an old PWS file. 
+    ds = gdal.Open(filename)
+    geotransform = ds.GetGeoTransform()
+    pws = np.array(ds.GetRasterBand(1).ReadAsArray())
+    
+    errorMap = np.empty( np.shape(pws) ) * np.nan
+    
+    store = pd.HDFStore(path)
+    df =  store['df']   # save it
+    store.close()
+    df.dropna(inplace = True)
+    
+    latInd = np.round( (df['lat'].to_numpy() - geotransform[3])/geotransform[5] ).astype(int)
+    lonInd = np.round( (df['lon'].to_numpy() - geotransform[0])/geotransform[1] ).astype(int)
+    errorMap[latInd, lonInd] = predError
+    
+    
+    fig, ax1 = plt.subplots()
+    im = ax1.imshow(errorMap, interpolation='none', 
+                   vmin=1, vmax=1.5)
+    plt.title('prediction error')
+    cbar = plt.colorbar(im)
+    
+    #plot other variables to also look at NaN and error patterns
+    store = pd.HDFStore(path)
+    dfAll =  store['df']   # save it    
+    store.close()
+    dfAll.dropna(subset=['lat', 'lon'], inplace=True)
+    latIndAll = np.round( (dfAll['lat'].to_numpy() - geotransform[3])/geotransform[5] ).astype(int)
+    lonIndAll = np.round( (dfAll['lon'].to_numpy() - geotransform[0])/geotransform[1] ).astype(int)
+    
+    for feature in dfAll.head():
+        thisMap = np.empty(np.shape(pws)) * np.nan
+        thisMap[latIndAll, lonIndAll] = dfAll[feature].to_numpy()
+        fig, ax = plt.subplots()
+        ax.imshow(thisMap, interpolation='none')
+        plt.title(feature)
+    
+    return ax1
 
 def plot_importance(imp):
     """
@@ -281,7 +347,8 @@ def plot_pdp(regr, X_test):
         ax.set_xlabel(feature_name, fontsize = 18)
         ax.set_ylabel("Plant-water sensitivity", fontsize = 18)
         plt.show()
-
+    
+    
     
 def main():
     plt.rcParams.update({'font.size': 18})
@@ -289,9 +356,13 @@ def main():
     #%% Load data
     path = os.path.join(dirs.dir_data, 'store_plant_soil_topo_climate_PWSthrough2021.h5')
     df = cleanup_data(path)
-    #%% train rf
-    X_test, y_test, regr, score,  imp = regress(df)
+    
+    #%% Train rf
+    X_test, y_test, regr, score,  imp = regress(df)    
+    
+    
     #%% make plots
+    ax = plot_error_pattern(path)
     ax = plot_importance(imp)
     ax = plot_importance_by_category(imp)
     ax = plot_importance_plants(imp)
