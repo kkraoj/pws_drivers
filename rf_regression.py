@@ -196,9 +196,6 @@ def plot_error_pattern(path):
     path = os.path.join(dirs.dir_data, 'store_plant_soil_topo_climate_PWSthrough2021.h5')
     df = cleanup_data(path)
     
-    # Train rf
-    X_test, y_test, regr, score,  imp = regress(df)
-    
     #make map_predictionError function later
     XAll = df.drop("pws",axis = 1)
     y_hat = regr.predict(XAll)
@@ -359,8 +356,7 @@ def main():
     
     #%% Train rf
     X_test, y_test, regr, score,  imp = regress(df)    
-    
-    
+     
     #%% make plots
     ax = plot_error_pattern(path)
     ax = plot_importance(imp)
