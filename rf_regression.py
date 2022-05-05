@@ -17,6 +17,7 @@ import seaborn as sns
 import sklearn.preprocessing
 import matplotlib.patches
 import sklearn.inspection
+from sklearn.inspection import permutation_importance
 import sklearn.metrics
 
 import dirs
@@ -106,7 +107,7 @@ def regress(df):
     Returns:
         X_test:dataframe of test set features
         y_test: Series of test set pws
-        regr: trained rf model (sklearn)
+        regrn: trained rf model (sklearn)
         imp: dataframe of feature importance in descending order
     -------
     
@@ -126,16 +127,19 @@ def regress(df):
     leaves = 6
     decrease = 1e-6
     # construct rf model
-    regr = sklearn.ensemble.RandomForestRegressor(min_samples_leaf=leaves, \
+    regrn = sklearn.ensemble.RandomForestRegressor(min_samples_leaf=leaves, \
                       min_impurity_decrease=decrease, n_estimators = 50)
     # train
-    regr.fit(X_train, y_train)
+    regrn.fit(X_train, y_train)
     # test set performance
-    score = regr.score(X_test,y_test)
+    score = regrn.score(X_test,y_test)
     print(f"[INFO] score={score:0.3f}, leaves={leaves}, decrease={decrease}")
     
     # assemble all importance with feature names and colors
-    heights = regr.feature_importances_
+    rImp = permutation_importance(regrn, X_test, y_test,
+                            n_repeats=3, random_state=0)
+    heights = rImp.importances_mean
+    #heights = regrn.feature_importances_
     ticks = X.columns
   
     green, brown, blue, yellow, plant, soil, climate, topo = get_categories_and_colors()
@@ -159,15 +163,15 @@ def regress(df):
     imp.sort_values("importance", ascending = True, inplace = True)
     print(imp.groupby("color").sum().round(2))
 
-    return X_test, y_test, regr, score, imp
+    return X_test, y_test, regrn, score, imp
 
     
 
-def plot_preds_actual(X_test, y_test, regr, score):
+def plot_preds_actual(X_test, y_test, regrn, score):
     """
     Plot of predictions vs actual data
     """
-    y_hat =regr.predict(X_test)
+    y_hat =regrn.predict(X_test)
     
     fig, ax = plt.subplots(figsize = (3,3))
     ax.scatter(y_hat, y_test, s = 1, alpha = 0.05, color = "k")
@@ -193,7 +197,7 @@ def plot_error_pattern(path):
 
     """
     # Load data
-    path = os.path.join(dirs.dir_data, 'store_plant_soil_topo_climate_PWSthrough2021.h5')
+    path = os.path.join(dirs.dir_data, 'store_plant_soil_topo_climate_PWSthrough2021v2.h5')
     df = cleanup_data(path)
     
     #make map_predictionError function later
@@ -256,7 +260,7 @@ def plot_importance(imp):
     ax.legend(handles=legend_elements, fontsize = 18)
     ax.set_xlabel("Variable importance", fontsize = 18)
     ax.set_ylabel("")
-    ax.set_xlim(0,0.21)
+    ax.set_xlim(0,0.60)
 
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
@@ -340,15 +344,15 @@ def main():
     df = cleanup_data(path)
     
     #%% Train rf
-    X_test, y_test, regr, score,  imp = regress(df)    
+    X_test, y_test, regrn, score,  imp = regress(df)    
      
     #%% make plots
     ax = plot_error_pattern(path)
     ax = plot_importance(imp)
     ax = plot_importance_by_category(imp)
     ax = plot_importance_plants(imp)
-    ax = plot_preds_actual(X_test, y_test, regr, score)
-    plot_pdp(regr, X_test)
+    ax = plot_preds_actual(X_test, y_test, regrn, score)
+    plot_pdp(regrn, X_test)
     
 
 if __name__ == "__main__":
