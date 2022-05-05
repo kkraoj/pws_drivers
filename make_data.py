@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 import dirs
+
 sns.set(font_scale = 0.6, style = "ticks")
 
 
@@ -177,16 +178,33 @@ def create_h5(store_path):
     df = create_df(array,keys)
     df.dropna(subset = ["pws"], inplace = True)
     
-    
     df.describe()
     df.loc[df['silt']<-1] = np.nan
     df.loc[df['sand']<-1] = np.nan
     df.loc[df['clay']<-1] = np.nan
     df.loc[df['ks']<-1] = np.nan
     df.loc[df['thetas']<-1] = np.nan
-    df.loc[df['pft']<50] = np.nan
-    
+    df.loc[df['pft']<41] = np.nan
+    df.loc[df['pft']>81] = np.nan
     df.loc[df['elevation']<-1e3] = np.nan
+    df.loc[df['slope']<-1e3] = np.nan
+    df.loc[df['aspect']>2e3] = np.nan
+    df.loc[df['twi']>2e3] = np.nan
+    
+    #plot map of where there is data
+    df2 = df.copy()
+    droppedFeats = ["pws", 'sand', 'silt', 'clay', 'ks', 'thetas', 'pft', 
+                   'elevation', 'slope', 'aspect', 'twi']
+    df2.dropna(subset = droppedFeats, inplace = True)
+    latMap = np.empty( np.shape(pws) ) * np.nan
+    latInd = np.round( (df2['lat'].to_numpy() - geotransform[3])/geotransform[5] ).astype(int)
+    lonInd = np.round( (df2['lon'].to_numpy() - geotransform[0])/geotransform[1] ).astype(int)
+    latMap[latInd, lonInd] = 1
+    fig, ax1 = plt.subplots()
+    im = ax1.imshow(latMap, interpolation='none')
+    plt.title('lats with PWS, soil, elev, and PFT, NaNs')
+    print('removing PWS, soil, elev, and PFT NaNs has length: ' + str(len(df3)))
+    
     df.loc[df['isohydricity']>1e3] = np.nan
     df.loc[df['root_depth']<-1] = np.nan
     df.loc[df['hft']<-1e3] = np.nan
@@ -194,9 +212,18 @@ def create_h5(store_path):
     df.loc[df['gpmax']<-1e3] = np.nan
     df.loc[df['c']<-1e3] = np.nan
     df.loc[df['g1']<-1e3] = np.nan
-    df.loc[df['slope']<-1e3] = np.nan
-    df.loc[df['aspect']>2e3] = np.nan
-    df.loc[df['twi']>2e3] = np.nan
+
+    #plot map after traits
+    df3 = df.copy()
+    df3.dropna(inplace = True)
+    latMap = np.empty( np.shape(pws) ) * np.nan
+    latInd = np.round( (df3['lat'].to_numpy() - geotransform[3])/geotransform[5] ).astype(int)
+    lonInd = np.round( (df3['lon'].to_numpy() - geotransform[0])/geotransform[1] ).astype(int)
+    latMap[latInd, lonInd] = 1
+    fig, ax1 = plt.subplots()
+    im = ax1.imshow(latMap, interpolation='none')
+    plt.title('lats with PWS, soil, elev, PFT, and trait, NaNs')
+    print('removing all NaNs has length: ' + str(len(df4)))
     
 
     store = pd.HDFStore(store_path)
@@ -242,7 +269,7 @@ def plot_heatmap(df):
 
 def main():
     #%% make and save dataframe:
-    store_path = os.path.join(dirs.dir_data, 'store_plant_soil_topo_climate_PWSthrough2021.h5')
+    store_path = os.path.join(dirs.dir_data, 'store_plant_soil_topo_climate_PWSthrough2021v2.h5')
     # This can be run in Krishna's computer only because there are many tif files required
     create_h5(store_path)
     
