@@ -33,7 +33,8 @@ def cleanup_data(path):
     store = pd.HDFStore(path)
     df =  store['df']   # save it
     store.close()
-    df.drop(["lc","isohydricity",'root_depth', 'hft', 'p50', 'gpmax', 'c', 'g1',"dry_season_length","lat","lon"],axis = 1, inplace = True)
+    #df.drop(["lc","isohydricity",'root_depth', 'hft', 'p50', 'gpmax', 'c', 'g1',"dry_season_length","lat","lon"],axis = 1, inplace = True)
+    df.drop(["lc","dry_season_length","lat","lon"],axis = 1, inplace = True)
     df.dropna(inplace = True)
     df.reset_index(inplace = True, drop = True)
     
@@ -49,13 +50,15 @@ def get_categories_and_colors():
     brown = "saddlebrown"
     blue = "dodgerblue"
     yellow = "khaki"
+    purple = "magenta"
     
     plant = ['canopy_height', "agb",'ndvi', "lc","pft"]
     soil = ['sand',  'clay', 'silt','thetas', 'ks']
     climate = [ 'dry_season_length', 'vpd_mean', 'vpd_std',"ppt_mean","ppt_std","t_mean","t_std","ppt_lte_100"]
     topo = ['elevation', 'aspect', 'slope', 'twi',"dist_to_water"]
+    traits = ['isohydricity', 'root_depth', 'hft', 'p50', 'gpmax', 'c', 'g1']
     
-    return green, brown, blue, yellow, plant, soil, climate, topo
+    return green, brown, blue, yellow, purple, plant, soil, climate, topo, traits
 
 def prettify_names(names):
     new_names = {"ks":"K$_{s,max}$",
@@ -142,7 +145,8 @@ def regress(df):
     #heights = regrn.feature_importances_
     ticks = X.columns
   
-    green, brown, blue, yellow, plant, soil, climate, topo = get_categories_and_colors()
+    green, brown, blue, yellow, purple, plant, soil, climate, topo, traits \
+                                            = get_categories_and_colors()
     
     imp = pd.DataFrame(index = ticks, columns = ["importance"], data = heights)
     
@@ -153,6 +157,8 @@ def regress(df):
             return brown
         elif x in climate:
             return blue
+        elif x in traits:
+            return purple
         else:
             return yellow
     imp["color"] = imp.index
@@ -245,7 +251,8 @@ def plot_importance(imp):
     """
     
     fig, ax = plt.subplots(figsize = (5.5,7))
-    green, brown, blue, yellow, plant, soil, climate, topo = get_categories_and_colors()
+    green, brown, blue, yellow, purple, plant, soil, climate, topo, traits \
+                                            = get_categories_and_colors()
 
     imp.plot.barh(y = "importance",x="symbol",color = imp.color, edgecolor = "grey", ax = ax, fontsize = 18)
 
@@ -272,7 +279,8 @@ def plot_importance_by_category(imp):
     """
     Feature importance combined by categories
     """
-    green, brown, blue, yellow, plant, soil, climate, topo = get_categories_and_colors()
+    green, brown, blue, yellow, purple, plant, soil, climate, topo, traits \
+                                            = get_categories_and_colors()
     combined = pd.DataFrame({"category":["plant","climate","soil","topography"], "color":[green, blue, brown, yellow]})
     combined = combined.merge(imp.groupby("color").sum(), on = "color")
     
@@ -340,7 +348,7 @@ def main():
     plt.rcParams.update({'font.size': 18})
 
     #%% Load data
-    path = os.path.join(dirs.dir_data, 'store_plant_soil_topo_climate_PWSthrough2021.h5')
+    path = os.path.join(dirs.dir_data, 'store_plant_soil_topo_climate_PWSthrough2021v2.h5')
     df = cleanup_data(path)
     
     #%% Train rf
