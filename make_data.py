@@ -115,7 +115,7 @@ def create_h5(store_path):
         'root_depth','canopy_height','hft','p50','gpmax', 'c','g1','pft',
         "elevation","aspect","slope","twi","dry_season_length","ndvi",\
             "vpd_mean","vpd_std", "dist_to_water","agb","ppt_mean","ppt_std","lc",\
-                "t_mean","t_std","ppt_lte_100", "lon","lat"]
+                "t_mean","t_std","ppt_lte_100", "lon","lat","vanGen_n"]
     
     array = np.zeros((len(keys), data['pws'].shape[0],data['pws'].shape[1])).astype('float')
     array[0] = data['pws']
@@ -171,7 +171,8 @@ def create_h5(store_path):
     ds = gdal.Open(os.path.join(dirs.dir_data, "pws_features","ppt_lte_100.tif"))
     array[30]= ds.GetRasterBand(band).ReadAsArray() 
     array[31]= lons
-    array[32]= lats
+    array[32]= lats    
+    array[33]= get_value(os.path.join(dirs.dir_data, "pws_features","vanGen_n_30cm.tif"),lons,lats)
     
     ds = None
     
@@ -192,6 +193,12 @@ def create_h5(store_path):
     df.loc[df['twi']>2e3] = np.nan
     
     #plot map of where there is data
+    #first load pws to get grid size
+    filename = os.path.join("C:/repos/data/pws_features/PWS_through2021.tif") #load an old PWS file. 
+    ds = gdal.Open(filename)
+    geotransform = ds.GetGeoTransform()
+    pws = np.array(ds.GetRasterBand(1).ReadAsArray())
+    #plot map
     df2 = df.copy()
     droppedFeats = ["pws", 'sand', 'silt', 'clay', 'ks', 'thetas', 'pft', 
                    'elevation', 'slope', 'aspect', 'twi']
@@ -203,7 +210,7 @@ def create_h5(store_path):
     fig, ax1 = plt.subplots()
     im = ax1.imshow(latMap, interpolation='none')
     plt.title('lats with PWS, soil, elev, and PFT, NaNs')
-    print('removing PWS, soil, elev, and PFT NaNs has length: ' + str(len(df3)))
+    print('removing PWS, soil, elev, and PFT NaNs has length: ' + str(len(df2)))
     
     df.loc[df['isohydricity']>1e3] = np.nan
     df.loc[df['root_depth']<-1] = np.nan
@@ -223,7 +230,7 @@ def create_h5(store_path):
     fig, ax1 = plt.subplots()
     im = ax1.imshow(latMap, interpolation='none')
     plt.title('lats with PWS, soil, elev, PFT, and trait, NaNs')
-    print('removing all NaNs has length: ' + str(len(df4)))
+    print('removing all NaNs has length: ' + str(len(df3)))
     
 
     store = pd.HDFStore(store_path)

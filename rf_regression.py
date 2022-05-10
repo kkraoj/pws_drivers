@@ -34,7 +34,8 @@ def cleanup_data(path):
     df =  store['df']   # save it
     store.close()
     #df.drop(["lc","isohydricity",'root_depth', 'hft', 'p50', 'gpmax', 'c', 'g1',"dry_season_length","lat","lon"],axis = 1, inplace = True)
-    df.drop(["lc","dry_season_length","lat","lon"],axis = 1, inplace = True)
+    df.drop(["lc","ndvi","hft","sand","ppt_lte_100","thetas","dry_season_length","t_mean","t_std","lat","lon"],axis = 1, inplace = True)
+    #df.drop(["lc","ndvi","dry_season_length","lat","lon"],axis = 1, inplace = True)
     df.dropna(inplace = True)
     df.reset_index(inplace = True, drop = True)
     
@@ -53,7 +54,7 @@ def get_categories_and_colors():
     purple = "magenta"
     
     plant = ['canopy_height', "agb",'ndvi', "lc","pft"]
-    soil = ['sand',  'clay', 'silt','thetas', 'ks']
+    soil = ['sand',  'clay', 'silt','thetas', 'ks', 'vanGen_n']
     climate = [ 'dry_season_length', 'vpd_mean', 'vpd_std',"ppt_mean","ppt_std","t_mean","t_std","ppt_lte_100"]
     topo = ['elevation', 'aspect', 'slope', 'twi',"dist_to_water"]
     traits = ['isohydricity', 'root_depth', 'hft', 'p50', 'gpmax', 'c', 'g1']
@@ -93,6 +94,7 @@ def prettify_names(names):
                  "t_std":"Temp$_{st dev}$",
                  "lon":"Lon",
                  "lat":"Lat",
+                 "vanGen_n":"van Genuchten n"
                  }
     return [new_names[key] for key in names]
     
@@ -140,7 +142,7 @@ def regress(df):
     
     # assemble all importance with feature names and colors
     rImp = permutation_importance(regrn, X_test, y_test,
-                            n_repeats=3, random_state=0)
+                            n_repeats=2, random_state=0)
     heights = rImp.importances_mean
     #heights = regrn.feature_importances_
     ticks = X.columns
@@ -171,7 +173,21 @@ def regress(df):
 
     return X_test, y_test, regrn, score, imp
 
-    
+
+def plot_corr_feats(df):
+    '''
+    Plot of feature correlation to figure out what to drop
+    takes in dataframe
+    returns axis handle
+
+    '''
+    X = df.drop("pws",axis = 1)
+    corrMat = X.corr()
+    r2bcmap = sns.color_palette("vlag", as_cmap=True)
+    sns.heatmap(corrMat, 
+            xticklabels=prettify_names(corrMat.columns.values),
+            yticklabels=prettify_names(corrMat.columns.values),
+            cmap = r2bcmap, vmin=-0.65, vmax=0.65)
 
 def plot_preds_actual(X_test, y_test, regrn, score):
     """
@@ -188,7 +204,7 @@ def plot_preds_actual(X_test, y_test, regrn, score):
     ax.annotate(f"R$^2$={score:0.2f}", (0.1,0.9),xycoords = "axes fraction", ha = "left")
     return ax
 
-def plot_error_pattern(path):
+def plot_error_pattern(path, df):
     """
     Make map of prediction error to visually test if there is a spatial pattern
     Also plot other inputs for comparison
@@ -196,15 +212,16 @@ def plot_error_pattern(path):
     Parameters
     ----------
     path: location where H5 file with PWS and all input features is stored
+    df: dataframe with features
 
     Returns
     -------
     ax: axis handle
 
     """
-    # Load data
-    path = os.path.join(dirs.dir_data, 'store_plant_soil_topo_climate_PWSthrough2021v2.h5')
-    df = cleanup_data(path)
+#    # Load data
+#    path = os.path.join(dirs.dir_data, 'store_plant_soil_topo_climate_PWSthrough2021v2.h5')
+#    df = cleanup_data(path)
     
     #make map_predictionError function later
     X_test, y_test, regrn, score,  imp = regress(df)
@@ -221,12 +238,12 @@ def plot_error_pattern(path):
     errorMap = np.empty( np.shape(pws) ) * np.nan
     
     store = pd.HDFStore(path)
-    df =  store['df']   # save it
+    df2 =  store['df']   # save it
     store.close()
-    df.dropna(inplace = True)
+    df2.dropna(inplace = True)
     
-    latInd = np.round( (df['lat'].to_numpy() - geotransform[3])/geotransform[5] ).astype(int)
-    lonInd = np.round( (df['lon'].to_numpy() - geotransform[0])/geotransform[1] ).astype(int)
+    latInd = np.round( (df2['lat'].to_numpy() - geotransform[3])/geotransform[5] ).astype(int)
+    lonInd = np.round( (df2['lon'].to_numpy() - geotransform[0])/geotransform[1] ).astype(int)
     errorMap[latInd, lonInd] = predError
     
     
@@ -331,7 +348,7 @@ def plot_pdp(regr, X_test):
     # Which features need PDPs? print below line and choose the numbers
     # corresponding to the feature
     print(list(zip(X_test.columns, range(X_test.shape[1]))))
-    features = [3,7, 12, 4, 13, 11]
+    features = [3,7, 12, 4, 13, 11, 18, 2]
     feature_names = list(X_test.columns[features])
     feature_names = prettify_names(feature_names)
     for feature, feature_name in zip(features, feature_names):
@@ -352,15 +369,17 @@ def main():
     df = cleanup_data(path)
     
     #%% Train rf
-    X_test, y_test, regrn, score,  imp = regress(df)    
+    X_test, y_test, regrn, score,  imp = regress(df)  
      
     #%% make plots
-    ax = plot_error_pattern(path)
+    ax = plot_corr_feats(df)
+    #still a bug somewhere in plot_error_pattern, ignroe for now
+    #ax = plot_error_pattern(path, df)
     ax = plot_importance(imp)
     ax = plot_importance_by_category(imp)
     ax = plot_importance_plants(imp)
     ax = plot_preds_actual(X_test, y_test, regrn, score)
-    plot_pdp(regrn, X_test)
+    #plot_pdp(regrn, X_test)
     
 
 if __name__ == "__main__":
