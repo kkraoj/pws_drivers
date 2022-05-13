@@ -114,7 +114,7 @@ def create_h5(store_path):
     keys = ['pws','silt','sand','clay', 'ks','thetas','isohydricity',\
         'root_depth','canopy_height','hft','p50','gpmax', 'c','g1','pft',
         "elevation","aspect","slope","twi","dry_season_length","ndvi",\
-            "vpd_mean","vpd_std", "dist_to_water","agb","ppt_mean","ppt_std","lc",\
+            "vpd_mean","vpd_cv", "dist_to_water","agb","ppt_mean","ppt_cv","lc",\
                 "t_mean","t_std","ppt_lte_100", "lon","lat","vanGen_n"]
     
     array = np.zeros((len(keys), data['pws'].shape[0],data['pws'].shape[1])).astype('float')
@@ -153,7 +153,8 @@ def create_h5(store_path):
     ds = gdal.Open(os.path.join(dirs.dir_data, "pws_features","vpd_mean.tif"))
     array[21] = ds.GetRasterBand(band).ReadAsArray()
     ds = gdal.Open(os.path.join(dirs.dir_data, "pws_features","vpdStd.tif"))
-    array[22]= ds.GetRasterBand(band).ReadAsArray()
+    vpdStd = ds.GetRasterBand(band).ReadAsArray()
+    array[22]= vpdStd/array[21]
     ds = gdal.Open(os.path.join(dirs.dir_data, "pws_features","distance_to_water_bodies.tif"))
     array[23]= ds.GetRasterBand(band).ReadAsArray()
     ds = gdal.Open(os.path.join(dirs.dir_data, "pws_features","agb_2020.tif"))
@@ -161,13 +162,16 @@ def create_h5(store_path):
     ds = gdal.Open(os.path.join(dirs.dir_data, "pws_features","pptMean.tif"))
     array[25]= ds.GetRasterBand(band).ReadAsArray()
     ds = gdal.Open(os.path.join(dirs.dir_data, "pws_features","pptStd.tif"))
-    array[26]= ds.GetRasterBand(band).ReadAsArray()
+    pptStd = ds.GetRasterBand(band).ReadAsArray()
+    array[26]= pptStd/array[25]
     ds = gdal.Open(os.path.join(dirs.dir_data, "pws_features","landcover.tif"))
     array[27]= ds.GetRasterBand(band).ReadAsArray()
     ds = gdal.Open(os.path.join(dirs.dir_data, "pws_features","tMean.tif"))
-    array[28]= ds.GetRasterBand(band).ReadAsArray() 
+    #note + 1 (previous bug in file generation)
+    array[28]= ds.GetRasterBand(band+1).ReadAsArray()  
     ds = gdal.Open(os.path.join(dirs.dir_data, "pws_features","tStd.tif"))
-    array[29]= ds.GetRasterBand(band).ReadAsArray() 
+    #note + 1 (previous bug in file generation)
+    array[29]= ds.GetRasterBand(band+1).ReadAsArray() 
     ds = gdal.Open(os.path.join(dirs.dir_data, "pws_features","ppt_lte_100.tif"))
     array[30]= ds.GetRasterBand(band).ReadAsArray() 
     array[31]= lons
@@ -276,7 +280,7 @@ def plot_heatmap(df):
 
 def main():
     #%% make and save dataframe:
-    store_path = os.path.join(dirs.dir_data, 'store_plant_soil_topo_climate_PWSthrough2021v2.h5')
+    store_path = os.path.join(dirs.dir_data, 'store_plant_soil_topo_climate_PWSthrough2021v3.h5')
     # This can be run in Krishna's computer only because there are many tif files required
     create_h5(store_path)
     

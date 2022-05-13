@@ -34,7 +34,7 @@ def cleanup_data(path):
     df =  store['df']   # save it
     store.close()
     #df.drop(["lc","isohydricity",'root_depth', 'hft', 'p50', 'gpmax', 'c', 'g1',"dry_season_length","lat","lon"],axis = 1, inplace = True)
-    df.drop(["lc","ndvi","hft","sand","ppt_lte_100","thetas","dry_season_length","t_mean","t_std","lat","lon"],axis = 1, inplace = True)
+    df.drop(["lc","ndvi","hft","sand",'vpd_cv',"ppt_lte_100","thetas","dry_season_length","t_mean","t_std","lat","lon"],axis = 1, inplace = True)
     #df.drop(["lc","ndvi","dry_season_length","lat","lon"],axis = 1, inplace = True)
     df.dropna(inplace = True)
     df.reset_index(inplace = True, drop = True)
@@ -55,7 +55,7 @@ def get_categories_and_colors():
     
     plant = ['canopy_height', "agb",'ndvi', "lc","pft"]
     soil = ['sand',  'clay', 'silt','thetas', 'ks', 'vanGen_n']
-    climate = [ 'dry_season_length', 'vpd_mean', 'vpd_std',"ppt_mean","ppt_std","t_mean","t_std","ppt_lte_100"]
+    climate = [ 'dry_season_length', 'vpd_mean', 'vpd_cv',"ppt_mean","ppt_cv","t_mean","t_std","ppt_lte_100"]
     topo = ['elevation', 'aspect', 'slope', 'twi',"dist_to_water"]
     traits = ['isohydricity', 'root_depth', 'hft', 'p50', 'gpmax', 'c', 'g1']
     
@@ -65,12 +65,12 @@ def prettify_names(names):
     new_names = {"ks":"K$_{s,max}$",
                  "ndvi":"NDVI",
                  "vpd_mean":"VPD$_{mean}$",
-                 "vpd_std":"VPD$_{st dev}$",
+                 "vpd_cv":"VPD$_{CV}$",
                  "thetas":"Soil porosity",
                  "elevation":"Elevation",
                  "dry_season_length":"Dry season length",
                  "ppt_mean":"Precip$_{mean}$",
-                 "ppt_std":"Precip$_{st dev}$",
+                 "ppt_cv":"Precip$_{CV}$",
                  "agb":"Biomass",
                  "sand":"Sand %",
                  "clay":"Clay %",
@@ -124,16 +124,29 @@ def regress(df):
     # separate into train and test set
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
         X, y, test_size=0.33, random_state=32)
+    '''
     # Checking if leaves or node_impurity affects performance
     # after running found that it has almost no effect (R2 varies by 0.01)
-    # for leaves in [6,7,8,9,10,12, 14, 15]:
-        # for decrease in [1e-5, 5e-6,1e-6, 1e-7]:
+    for leaves in [3, 4, 6]: #[6,7,8,9,10,12, 14, 15]:
+        for decrease in [ 1e-8, 1e-9,5e-10,1e-10]:
+            for nEst in [50,90,120,140]:
+                # construct rf model
+                regrn = sklearn.ensemble.RandomForestRegressor(min_samples_leaf=leaves, \
+                              min_impurity_decrease=decrease, n_estimators = nEst)
+                # train
+                regrn.fit(X_train, y_train)
+                # test set performance
+                score = regrn.score(X_test,y_test)
+                print(f"[INFO] score={score:0.3f}, leaves={leaves}, decrease={decrease}, nEst = {nEst}")
     # choose min leaves in terminal node and node impurity
-    leaves = 6
-    decrease = 1e-6
+    ''' 
+    #can get highest with 3 leaves, 120 nEst, decrease 1e-8, but that seems like low number of leaves
+    #old configuration was leaves = 6, decrease 1e-6, nEst = 50
+    leaves = 4
+    decrease = 1e-8
     # construct rf model
     regrn = sklearn.ensemble.RandomForestRegressor(min_samples_leaf=leaves, \
-                      min_impurity_decrease=decrease, n_estimators = 50)
+                      min_impurity_decrease=decrease, n_estimators = 90)
     # train
     regrn.fit(X_train, y_train)
     # test set performance
@@ -280,7 +293,9 @@ def plot_importance(imp):
                        matplotlib.patches.Patch(facecolor=yellow, edgecolor='grey',
                              label='Topography'), 
                        matplotlib.patches.Patch(facecolor=blue, edgecolor='grey',
-                             label='Climate')]
+                             label='Climate'),
+                       matplotlib.patches.Patch(facecolor=purple, edgecolor='grey',
+                             label='Traits')]
     ax.legend(handles=legend_elements, fontsize = 18)
     ax.set_xlabel("Variable importance", fontsize = 18)
     ax.set_ylabel("")
@@ -298,7 +313,8 @@ def plot_importance_by_category(imp):
     """
     green, brown, blue, yellow, purple, plant, soil, climate, topo, traits \
                                             = get_categories_and_colors()
-    combined = pd.DataFrame({"category":["plant","climate","soil","topography"], "color":[green, blue, brown, yellow]})
+    combined = pd.DataFrame({"category":["plant","climate","soil","topography","traits"], \
+                             "color":[green, blue, brown, yellow, purple]})
     combined = combined.merge(imp.groupby("color").sum(), on = "color")
     
     combined = combined.sort_values("importance")
@@ -365,7 +381,7 @@ def main():
     plt.rcParams.update({'font.size': 18})
 
     #%% Load data
-    path = os.path.join(dirs.dir_data, 'store_plant_soil_topo_climate_PWSthrough2021v2.h5')
+    path = os.path.join(dirs.dir_data, 'store_plant_soil_topo_climate_PWSthrough2021v3.h5')
     df = cleanup_data(path)
     
     #%% Train rf
